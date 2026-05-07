@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Snoopy Net Sniffer 🐾</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --cream:   #FFF8EC;
+      --red:     #D93025;
+      --navy:    #1A2744;
+      --sky:     #87CEEB;
+      --sky2:    #C9E8F5;
+      --yellow:  #FFD84D;
+      --brown:   #6B3A2A;
+      --white:   #FFFFFF;
+      --grass:   #4CAF50;
+      --accent:  #F4A130;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: var(--sky);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+ 
+    /* SKY */
+    .sky-bg {
+      position: fixed; inset: 0; z-index: 0;
+      background: linear-gradient(180deg,#87CEEB 0%,#B8E4F9 55%,#D4EFF8 80%,#e8f8e4 100%);
+    }
+ 
+    /* CLOUDS */
+    .clouds { position: fixed; top:0; left:0; width:100%; z-index:1; pointer-events:none; }
+    .cloud { position:absolute; background:white; border-radius:50px; opacity:.85; animation:drift linear infinite; }
+    .cloud::before,.cloud::after { content:''; background:white; border-radius:50%; position:absolute; }
+    .cloud:nth-child(1){width:130px;height:40px;top:40px;left:-140px;animation-duration:28s}
+    .cloud:nth-child(1)::before{width:60px;height:60px;top:-30px;left:20px}
+    .cloud:nth-child(1)::after{width:40px;height:40px;top:-18px;left:60px}
+    .cloud:nth-child(2){width:100px;height:30px;top:100px;left:-110px;animation-duration:38s;animation-delay:-10s}
+    .cloud:nth-child(2)::before{width:45px;height:45px;top:-22px;left:15px}
+    .cloud:nth-child(2)::after{width:30px;height:30px;top:-14px;left:50px}
+    .cloud:nth-child(3){width:160px;height:45px;top:20px;left:-170px;animation-duration:50s;animation-delay:-25s;opacity:.6}
+    .cloud:nth-child(3)::before{width:70px;height:70px;top:-35px;left:25px}
+    .cloud:nth-child(3)::after{width:50px;height:50px;top:-22px;left:80px}
+    .cloud:nth-child(4){width:90px;height:28px;top:160px;left:-100px;animation-duration:42s;animation-delay:-15s;opacity:.7}
+    .cloud:nth-child(4)::before{width:40px;height:40px;top:-20px;left:10px}
+    .cloud:nth-child(4)::after{width:28px;height:28px;top:-12px;left:45px}
+    @keyframes drift { from{transform:translateX(0)} to{transform:translateX(calc(100vw + 200px))} }
+ 
+    /* GRASS */
+    .grass-strip {
+      position:fixed; bottom:0; left:0; width:100%; height:60px; z-index:2;
+      background:linear-gradient(180deg,#5DB85F 0%,#3d8f40 100%);
+    }
+    .grass-strip::before {
+      content:''; display:block; height:18px;
+      background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='18'%3E%3Cellipse cx='20' cy='18' rx='20' ry='18' fill='%235DB85F'/%3E%3C/svg%3E") repeat-x top center;
+    }
+ 
+    /* SNOOPY WALKING */
+    .snoopy-walk {
+      position:fixed; bottom:56px; z-index:50; pointer-events:none;
+      animation:walkAcross 12s linear infinite;
+    }
+    @keyframes walkAcross {
+      0%  {left:-120px;transform:scaleX(1)}
+      49% {left:calc(100vw + 20px);transform:scaleX(1)}
+      50% {left:calc(100vw + 20px);transform:scaleX(-1)}
+      99% {left:-120px;transform:scaleX(-1)}
+      100%{left:-120px;transform:scaleX(1)}
+    }
+ 
+    /* WOODSTOCK */
+    .woodstock {
+      position:fixed; font-size:1.5rem;
+      animation:flyBird 20s linear infinite;
+      z-index:3; pointer-events:none;
+    }
+    .woodstock:nth-child(1){top:80px;animation-duration:22s;animation-delay:0s}
+    .woodstock:nth-child(2){top:55px;animation-duration:18s;animation-delay:-8s}
+    @keyframes flyBird { from{left:-40px} to{left:calc(100vw + 40px)} }
+ 
+    /* WRAPPER */
+    .wrapper { position:relative; z-index:10; max-width:900px; margin:0 auto; padding:20px 16px 90px; }
+ 
+    /* HEADER */
+    .header {
+      text-align:center; margin-bottom:28px;
+      animation:popIn .6s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    @keyframes popIn {
+      from{transform:scale(.5) translateY(40px);opacity:0}
+      to{transform:scale(1) translateY(0);opacity:1}
+    }
+    .header h1 {
+      font-family:'Fredoka One',cursive;
+      font-size:clamp(2.2rem,6vw,3.4rem);
+      color:var(--navy);
+      text-shadow:4px 4px 0 var(--red),6px 6px 0 rgba(0,0,0,.1);
+      letter-spacing:1px; line-height:1.1;
+    }
+    .header h1 span{color:var(--red)}
+    .tagline {
+      font-size:1rem; color:var(--navy); font-weight:700;
+      background:var(--yellow); display:inline-block;
+      padding:4px 16px; border-radius:20px; margin-top:8px;
+      border:2.5px solid var(--navy); box-shadow:3px 3px 0 var(--navy);
+    }
+ 
+    /* CARD */
+    .card {
+      background:white; border:3px solid var(--navy);
+      border-radius:20px; box-shadow:6px 6px 0 var(--navy);
+      padding:22px; margin-bottom:22px;
+      animation:slideUp .5s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    @keyframes slideUp {
+      from{transform:translateY(30px);opacity:0}
+      to{transform:translateY(0);opacity:1}
+    }
+    .card:nth-child(2){animation-delay:.1s}
+    .card:nth-child(3){animation-delay:.2s}
+    .card:nth-child(4){animation-delay:.3s}
+ 
+    .card-title {
+      font-family:'Fredoka One',cursive; font-size:1.3rem;
+      color:var(--navy); display:flex; align-items:center;
+      gap:8px; margin-bottom:16px;
+    }
+    .card-title .badge {
+      background:var(--red); color:white;
+      font-family:'Fredoka One',cursive; font-size:.8rem;
+      padding:2px 10px; border-radius:20px; border:2px solid var(--navy);
+    }
+ 
+    /* TABS */
+    .tabs { display:flex; gap:8px; margin-bottom:18px; }
+    .tab-btn {
+      flex:1; padding:10px 14px; border:3px solid var(--navy);
+      border-radius:12px; background:var(--cream);
+      font-family:'Fredoka One',cursive; font-size:1rem;
+      cursor:pointer; color:var(--navy); transition:all .15s;
+      box-shadow:3px 3px 0 var(--navy);
+    }
+    .tab-btn:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--navy)}
+    .tab-btn.active{background:var(--red);color:white;transform:translate(2px,2px);box-shadow:1px 1px 0 var(--navy)}
+ 
+    /* INPUT */
+    .input-row{display:flex;gap:10px;align-items:stretch}
+    .url-input {
+      flex:1; padding:12px 18px; border:3px solid var(--navy);
+      border-radius:14px; font-family:'Nunito',sans-serif;
+      font-size:1rem; font-weight:700; color:var(--navy);
+      background:var(--cream); outline:none;
+      box-shadow:3px 3px 0 var(--navy); transition:box-shadow .15s;
+    }
+    .url-input:focus{box-shadow:5px 5px 0 var(--navy)}
+    .url-input::placeholder{color:#aaa;font-weight:600}
+ 
+    .btn-analyze {
+      padding:12px 24px; background:var(--red); color:white;
+      border:3px solid var(--navy); border-radius:14px;
+      font-family:'Fredoka One',cursive; font-size:1.1rem;
+      cursor:pointer; box-shadow:4px 4px 0 var(--navy);
+      transition:all .15s; white-space:nowrap;
+    }
+    .btn-analyze:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--navy)}
+    .btn-analyze:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--navy)}
+    .btn-analyze:disabled{opacity:.6;cursor:not-allowed;transform:none}
+ 
+    /* COMPARE */
+    .compare-row{display:flex;flex-direction:column;gap:10px}
+    .compare-inputs{display:flex;gap:10px}
+    .compare-inputs .url-input{flex:1}
+ 
+    /* STATUS */
+    .status-bubble {
+      display:none; background:var(--navy); color:white;
+      border-radius:16px; padding:12px 18px; font-weight:700;
+      font-size:.95rem; align-items:center; gap:10px;
+      margin-top:12px; border:2.5px solid var(--navy);
+      animation:popIn .3s both;
+    }
+    .status-bubble.show{display:flex}
+    .status-bubble.error{background:var(--red)}
+    .status-bubble .spinner {
+      width:22px;height:22px; border:3px solid rgba(255,255,255,.3);
+      border-top-color:white; border-radius:50%;
+      animation:spin .7s linear infinite; flex-shrink:0;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+ 
+    /* SPEECH BUBBLE */
+    .snoopy-bubble {
+      background:var(--yellow); border:3px solid var(--navy);
+      border-radius:18px; padding:10px 16px; font-weight:800;
+      color:var(--navy); font-size:.9rem; margin-top:12px;
+      box-shadow:3px 3px 0 var(--navy);
+    }
+    .snoopy-bubble::before{content:'🐾';margin-right:6px}
+ 
+    /* RESULTS */
+    #results-section{display:none}
+    #results-section.show{display:block;animation:slideUp .5s both}
+ 
+    /* FINGERPRINT GRID */
+    .fingerprint-grid {
+      display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+      gap:12px; margin-bottom:18px;
+    }
+    .fp-stat {
+      background:var(--cream); border:2.5px solid var(--navy);
+      border-radius:14px; padding:14px 12px; text-align:center;
+      box-shadow:3px 3px 0 var(--navy); transition:transform .15s;
+    }
+    .fp-stat:hover{transform:translate(-2px,-2px)}
+    .fp-stat .fp-icon{font-size:1.6rem}
+    .fp-stat .fp-value {
+      font-family:'Fredoka One',cursive; font-size:1.5rem;
+      color:var(--navy); display:block; line-height:1; margin:4px 0 2px;
+    }
+    .fp-stat .fp-label{font-size:.75rem;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.5px}
+ 
+    /* BEHAVIOR BADGE */
+    .behavior-badge {
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 20px; background:var(--navy); color:white;
+      border-radius:30px; font-family:'Fredoka One',cursive;
+      font-size:1.1rem; border:3px solid var(--navy);
+      box-shadow:3px 3px 0 #000; margin-bottom:14px;
+    }
+    .behavior-badge .conf {
+      background:var(--yellow); color:var(--navy);
+      border-radius:12px; padding:2px 10px; font-size:.85rem;
+    }
+ 
+    /* CHARTS */
+    .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    @media(max-width:600px){.charts-grid{grid-template-columns:1fr}}
+    .chart-card {
+      background:var(--cream); border:2.5px solid var(--navy);
+      border-radius:16px; padding:16px; box-shadow:3px 3px 0 var(--navy);
+    }
+    .chart-card.full{grid-column:1/-1}
+    .chart-card h3 {
+      font-family:'Fredoka One',cursive; font-size:1rem;
+      color:var(--navy); margin-bottom:10px;
+      display:flex; align-items:center; gap:6px;
+    }
+ 
+    /* COMPARISON TABLE */
+    .compare-table-wrap{overflow-x:auto}
+    table{width:100%;border-collapse:separate;border-spacing:0;font-size:.9rem}
+    thead tr{background:var(--navy);color:white}
+    thead th{padding:10px 14px;font-family:'Fredoka One',cursive;font-size:1rem}
+    thead th:first-child{border-radius:12px 0 0 0}
+    thead th:last-child{border-radius:0 12px 0 0}
+    tbody tr{background:white}
+    tbody tr:nth-child(even){background:var(--cream)}
+    tbody td{padding:9px 14px;font-weight:700;border-bottom:1.5px solid #ddd}
+    .winner-green{color:var(--grass)}
+    .winner-red{color:var(--red)}
+ 
+    /* DNS / IP PILLS */
+    .dns-list{display:flex;flex-wrap:wrap;gap:6px}
+    .dns-tag {
+      background:var(--navy); color:white;
+      border-radius:20px; padding:4px 12px;
+      font-size:.78rem; font-weight:700; border:2px solid var(--navy);
+    }
+    .ip-pill {
+      display:inline-flex; align-items:center; gap:4px;
+      background:var(--sky2); border:2px solid var(--navy);
+      border-radius:10px; padding:4px 10px;
+      font-size:.78rem; font-weight:700; color:var(--navy); margin:3px;
+    }
+ 
+    /* STRIPE DIVIDER */
+    .stripe-divider {
+      height:10px;
+      background:repeating-linear-gradient(90deg,var(--red) 0,var(--red) 20px,var(--navy) 20px,var(--navy) 40px);
+      border-radius:5px; margin:14px 0; border:2px solid var(--navy);
+    }
+ 
+    /* FOOTER */
+    .footer{text-align:center;color:var(--navy);font-weight:800;font-size:.85rem;margin-top:10px;opacity:.7}
+ 
+    /* SCROLLBAR */
+    ::-webkit-scrollbar{width:8px;height:8px}
+    ::-webkit-scrollbar-track{background:var(--cream);border-radius:10px}
+    ::-webkit-scrollbar-thumb{background:var(--navy);border-radius:10px}
+  </style>
+</head>
+<body>
+ 
+<div class="sky-bg"></div>
+<div class="clouds">
+  <div class="cloud"></div><div class="cloud"></div>
+  <div class="cloud"></div><div class="cloud"></div>
+</div>
+<div class="woodstock">🐦</div>
+<div class="woodstock">🐦</div>
+ 
+<!-- Walking Snoopy -->
+<div class="snoopy-walk">
+  <svg width="90" height="80" viewBox="0 0 90 80" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="45" cy="48" rx="22" ry="18" fill="white" stroke="#1A2744" stroke-width="2.5"/>
+    <ellipse cx="55" cy="28" rx="18" ry="16" fill="white" stroke="#1A2744" stroke-width="2.5"/>
+    <ellipse cx="38" cy="32" rx="8" ry="13" fill="#8B4513" stroke="#1A2744" stroke-width="2" transform="rotate(-15 38 32)"/>
+    <circle cx="61" cy="25" r="3.5" fill="#1A2744"/>
+    <circle cx="62.5" cy="24" r="1" fill="white"/>
+    <ellipse cx="71" cy="31" rx="5" ry="3.5" fill="#1A2744"/>
+    <path d="M65 35 Q68 39 72 37" stroke="#1A2744" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <rect x="34" y="38" width="22" height="7" rx="3" fill="#D93025" stroke="#1A2744" stroke-width="2"/>
+    <circle cx="45" cy="41.5" r="3" fill="#FFD84D" stroke="#1A2744" stroke-width="1.5"/>
+    <line x1="33" y1="62" x2="27" y2="76" stroke="#1A2744" stroke-width="5" stroke-linecap="round"/>
+    <line x1="40" y1="64" x2="38" y2="78" stroke="#1A2744" stroke-width="5" stroke-linecap="round"/>
+    <line x1="50" y1="64" x2="52" y2="78" stroke="#1A2744" stroke-width="5" stroke-linecap="round"/>
+    <line x1="57" y1="62" x2="63" y2="76" stroke="#1A2744" stroke-width="5" stroke-linecap="round"/>
+    <path d="M23 46 Q8 38 12 28 Q16 20 10 16" stroke="#1A2744" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <circle cx="75" cy="55" r="10" fill="none" stroke="#D93025" stroke-width="3"/>
+    <line x1="82" y1="62" x2="88" y2="70" stroke="#D93025" stroke-width="3" stroke-linecap="round"/>
+    <text x="71" y="58" font-size="8" fill="#D93025" font-weight="bold">?</text>
+  </svg>
+</div>
+ 
+<div class="grass-strip"></div>
+ 
+<div class="wrapper">
+  <!-- HEADER -->
+  <div class="header">
+    <div style="display:inline-block;margin-bottom:-10px">
+      <svg width="90" height="80" viewBox="0 0 90 80" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(4px 6px 0px rgba(0,0,0,.18))">
+        <rect x="10" y="40" width="70" height="40" rx="4" fill="#D93025" stroke="#1A2744" stroke-width="3"/>
+        <polygon points="5,42 45,5 85,42" fill="#1A2744" stroke="#1A2744" stroke-width="2"/>
+        <rect x="30" y="55" width="30" height="25" rx="3" fill="#1A2744"/>
+        <text x="38" y="47" font-size="10" fill="white" font-family="Fredoka One" font-weight="bold">NET</text>
+        <ellipse cx="45" cy="60" rx="14" ry="12" fill="white" stroke="#1A2744" stroke-width="2"/>
+        <ellipse cx="36" cy="63" rx="5" ry="8" fill="#8B4513" stroke="#1A2744" stroke-width="1.5" transform="rotate(-10 36 63)"/>
+        <circle cx="49" cy="57" r="2.5" fill="#1A2744"/>
+        <ellipse cx="54" cy="64" rx="4" ry="2.5" fill="#1A2744"/>
+      </svg>
+    </div>
+    <h1>SNOOPY <span>NET</span> SNIFFER</h1>
+    <p class="tagline">🐾 Good grief! It's packet analysis time, Charlie Brown!</p>
+  </div>
+ 
+  <!-- MODE TABS CARD -->
+  <div class="card" style="animation-delay:.05s">
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-single" onclick="switchMode('single')">🔍 Analyze Site</button>
+      <button class="tab-btn" id="tab-compare" onclick="switchMode('compare')">🆚 Compare Sites</button>
+    </div>
+ 
+    <!-- SINGLE PANEL -->
+    <div id="panel-single">
+      <div class="input-row">
+        <input class="url-input" id="urlInput" type="text" placeholder="https://example.com" onkeydown="if(event.key==='Enter') startAnalysis()"/>
+        <button class="btn-analyze" id="analyzeBtn" onclick="startAnalysis()">🐾 Sniff!</button>
+      </div>
+      <div class="snoopy-bubble" id="sniffHint">Snoopy says: Enter a URL and I'll dig up all the network secrets! Woof!</div>
+    </div>
+ 
+    <!-- COMPARE PANEL -->
+    <div id="panel-compare" style="display:none">
+      <div class="compare-row">
+        <div class="compare-inputs">
+          <input class="url-input" id="urlA" type="text" placeholder="https://site-a.com"/>
+          <input class="url-input" id="urlB" type="text" placeholder="https://site-b.com"/>
+        </div>
+        <button class="btn-analyze" onclick="startCompare()">🆚 Compare!</button>
+      </div>
+    </div>
+ 
+    <!-- STATUS -->
+    <div class="status-bubble" id="statusBubble">
+      <div class="spinner" id="statusSpinner"></div>
+      <span id="statusText">Snoopy is sniffing the network…</span>
+    </div>
+  </div>
+ 
+  <!-- RESULTS -->
+  <div id="results-section">
+ 
+    <!-- FINGERPRINT CARD -->
+    <div class="card" id="fingerprintCard">
+      <div class="card-title">🐾 Network Fingerprint <span class="badge" id="siteLabel">example.com</span></div>
+      <div class="behavior-badge" id="behaviorBadge">
+        <span id="behaviorLabel">Streaming</span>
+        <span class="conf" id="confidenceLabel">85%</span>
+      </div>
+      <div class="fingerprint-grid" id="fpGrid"></div>
+      <div class="stripe-divider"></div>
+      <div class="card-title" style="font-size:1rem">🌐 Contacted IPs</div>
+      <div id="ipList"></div>
+      <div class="card-title" style="font-size:1rem;margin-top:12px">📡 DNS Queries</div>
+      <div class="dns-list" id="dnsList"></div>
+    </div>
+ 
+    <!-- CHARTS CARD -->
+    <div class="card">
+      <div class="card-title">📊 Traffic Charts</div>
+      <div class="charts-grid">
+        <div class="chart-card" id="pieCardA">
+          <h3>🥧 Protocol Mix <span id="pieLabelA"></span></h3>
+          <canvas id="protocolChart" height="200"></canvas>
+        </div>
+        <!-- Site B pie — only visible in compare mode -->
+        <div class="chart-card" id="pieCardB" style="display:none">
+          <h3>🥧 Protocol Mix <span id="pieLabelB"></span></h3>
+          <canvas id="protocolChartB" height="200"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>📦 Packet Sizes</h3>
+          <canvas id="sizeChart" height="200"></canvas>
+        </div>
+        <div class="chart-card full">
+          <h3>📈 Traffic Over Time</h3>
+          <canvas id="timelineChart" height="120"></canvas>
+        </div>
+      </div>
+    </div>
+ 
+    <!-- COMPARISON CARD (hidden until compare mode) -->
+    <div class="card" id="compareCard" style="display:none">
+      <div class="card-title">🆚 Side-by-Side Comparison</div>
+      <div class="compare-table-wrap">
+        <table id="compareTable">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th id="thA">Site A</th>
+              <th id="thB">Site B</th>
+            </tr>
+          </thead>
+          <tbody id="compareTbody"></tbody>
+        </table>
+      </div>
+    </div>
+ 
+  </div><!-- /results-section -->
+ 
+  <div class="footer">Made with 🐾 love — Good Grief, that's a lot of packets!</div>
+</div>
+ 
+<script src="/static/script.js"></script>
+</body>
+</html>
+ 
